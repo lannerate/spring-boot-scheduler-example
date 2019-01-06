@@ -13,21 +13,30 @@ import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 import java.util.concurrent.Executor;
 
 /**
- * Created by rajeevkumarsingh on 02/08/17.
+ * refer to
+ *
+ * https://juejin.im/post/5b27b8366fb9a00e46675879
+ *
+ * http://blog.didispace.com/springbootasync-4/
+ *
  */
 @Configuration
 @EnableAsync
-public class SchedulerConfig implements SchedulingConfigurer,
-        AsyncConfigurer {
+public class SchedulerConfig implements
+        SchedulingConfigurer
+        ,AsyncConfigurer
+{
     private final int POOL_SIZE = Runtime.getRuntime().availableProcessors();
 
     @Override
     public void configureTasks(ScheduledTaskRegistrar scheduledTaskRegistrar) {
         ThreadPoolTaskScheduler threadPoolTaskScheduler = new ThreadPoolTaskScheduler();
         threadPoolTaskScheduler.setPoolSize(POOL_SIZE);
+        threadPoolTaskScheduler.setAwaitTerminationSeconds(60);
+        threadPoolTaskScheduler.setWaitForTasksToCompleteOnShutdown(true);
+        threadPoolTaskScheduler.setThreadGroupName("config-scheduled-group");
         threadPoolTaskScheduler.setThreadNamePrefix("config-scheduled-task-pool-");
         threadPoolTaskScheduler.initialize();
-
         scheduledTaskRegistrar.setTaskScheduler(threadPoolTaskScheduler);
     }
 
@@ -35,6 +44,11 @@ public class SchedulerConfig implements SchedulingConfigurer,
     public Executor getAsyncExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(POOL_SIZE);
+        executor.setMaxPoolSize(POOL_SIZE * 2);
+        executor.setKeepAliveSeconds(60);
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(60);
+        executor.setThreadGroupName("async-scheduled-group");
         executor.setThreadNamePrefix("async-scheduled-task-pool-");
         executor.initialize();
         return executor;
